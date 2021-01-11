@@ -1,0 +1,12 @@
+main: entityManager.EntityManager
+name: EntityManager
+version: 1.0.0
+description: Entity management plugin
+api-version: 1.16
+Author: _NickV
+permissions:
+
+commands:
+  entity:
+    description: Entity manager command
+    aliases: [em]
