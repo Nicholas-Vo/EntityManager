@@ -21,19 +21,24 @@ import entityManager.EntityManager;
 import entityManager.SubCommand;
 import entityManager.Utils;
 
-public class LagReport extends SubCommand {
+public class WorldReport extends SubCommand {
 
-	public LagReport(EntityManager plugin) {
+	public WorldReport(EntityManager plugin) {
 		super(plugin, "report");
 	}
 
 	@Override
 	public void execute(CommandSender sender, String[] args) {
+		if (!(sender instanceof Player)) {
+			plugin.fail(sender, "That's a player only command.");
+			return;
+		}
+		
 		Player p = (Player) sender;
-		List<Entity> world = p.getWorld().getEntities();
+		List<Entity> entities = p.getWorld().getEntities();
 		HashMap<EntityType, Integer> entityList = new HashMap<EntityType, Integer>();
 
-		for (Entity entity : world) {
+		for (Entity entity : entities) {
 			if (!entityIgnored(entity))
 				count(entity, entityList);
 		}
@@ -41,7 +46,8 @@ public class LagReport extends SubCommand {
 		entityList = sort(entityList);
 
 		int limit = 0;
-		sender.sendMessage("Entity report for " + Utils.worldToString(p.getWorld()) + ":");
+		String world = WordUtils.capitalize(Utils.worldToString(p.getWorld()));
+		sender.sendMessage("Displaying top entities for the " + ChatColor.RED + world + ChatColor.RESET + ".");
 		for (Entry<EntityType, Integer> entry : entityList.entrySet()) {
 			String entityToString = entry.getKey().toString().toLowerCase().replace("_", " ");
 			String entity = WordUtils.capitalize(entityToString);
@@ -86,7 +92,12 @@ public class LagReport extends SubCommand {
 	
 	@Override
 	public String description() {
-		return ChatColor.RED + "remove " + ChatColor.RESET + "- Display top entities for the world you're in";
+		return "Display top entities for the world you're in";
+	}
+
+	@Override
+	public String usage() {
+		return "report";
 	}
 
 }

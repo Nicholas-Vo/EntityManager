@@ -12,62 +12,110 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import entityManager.commands.LagReport;
-import entityManager.commands.NearbyEntites;
+import entityManager.commands.LookupEntity;
+import entityManager.commands.NearbyEntities;
+import entityManager.commands.ReloadConfiguration;
 import entityManager.commands.RemoveEntities;
-import entityManager.commands.SearchEntity;
+import entityManager.commands.WorldReport;
 
 public class EntityManager extends JavaPlugin {
 	public static EntityManager plugin;
 	public static String version = "1.0.0";
-	public Logger log = Bukkit.getLogger();
-	public ArrayList<SubCommand> commands = new ArrayList<SubCommand>();
 	public String noPermission = ChatColor.RED + "You do not have permission to do that.";
+	public String pluginTag = ChatColor.RED + "[EntityManager]";
+	private Logger log = Bukkit.getLogger();
+	private ArrayList<SubCommand> commands = new ArrayList<SubCommand>();
+	private ArrayList<EntityType> excludedEntities = new ArrayList<EntityType>();
 
 	public void onEnable() {
 		log.info("Enabling EntityManager v" + version + "...");
-		// plugin.getCommand("entity").setExecutor(this);
-		commands.add(new LagReport(this));
-		commands.add(new NearbyEntites(this));
+		commands.add(new WorldReport(this));
+		commands.add(new NearbyEntities(this));
 		commands.add(new RemoveEntities(this));
-		commands.add(new SearchEntity(this));
+		commands.add(new LookupEntity(this));
+		commands.add(new ReloadConfiguration(this));
+
+		initalizeStuff();
+
+		List<String> list = new ArrayList<String>(Arrays.asList("VILLAGER", "ARMOR_STAND"));
+
+		this.getConfig().addDefault("nearbyCommandLimit", 200);
+		this.getConfig().addDefault("removeCommandLimit", 30);
+		this.getConfig().addDefault("announceRemoval", true);
+		this.getConfig().addDefault("excludedEntities", list);
+		this.saveConfig();
+
+		for (SubCommand cmd : commands) // Add each subcommand into tab completor
+			completeList.add(cmd.getName());
 	}
 
 	public void onDisable() {
 		log.info("Disabling EntityManager v" + version + "...");
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
+	public void initalizeStuff() {
+		saveDefaultConfig();
+		parseExcludedEntities();
+
+		if (!getDataFolder().exists()) {
+			getDataFolder().mkdir();
+			logToConsole("No directory detected for EntityManager " + version + ". Creating directory now...");
+		}
+	}
+
+	public List<EntityType> getExcludedEntities() {
+		return excludedEntities;
+	}
+
+	public void parseExcludedEntities() {
+		for (String entry : this.getConfig().getStringList("excludedEntities")) {
+			EntityType entity = null;
+
+			try {
+				entity = EntityType.valueOf(entry);
+			} catch (IllegalArgumentException e) {
+				logToConsole(
+						"Entity \"" + ChatColor.WHITE + entry + "\" from the configuration file isn't a valid entity!");
+			}
+
+			if (entity != null)
+				excludedEntities.add(EntityType.valueOf(entry));
+		}
+	}
+
+	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args) {
 		if (!sender.hasPermission("entitymanager.use")) {
-			sender.sendMessage(ChatColor.RED + "You do not have permission to use that command.");
+			fail(sender, "You do not have permission to use that command.");
 			return false;
 		}
 
 		if (args.length == 0) {
-			sender.sendMessage(
-					ChatColor.GRAY + " --------" + ChatColor.GOLD + " Entity Manager " + ChatColor.GRAY + "--------");
-			for (SubCommand command : commands)
-				sender.sendMessage(
-						ChatColor.RED + "/" + command.getName() + "" + ChatColor.RESET + command.description());
+			sender.sendMessage(ChatColor.GRAY + " --------" + ChatColor.GOLD + " Entity Manager v" + version
+					+ ChatColor.GRAY + " --------");
+			for (SubCommand cmd : commands)
+				sender.sendMessage(ChatColor.RED + "/em " + ChatColor.GRAY + cmd.usage() + "" + ChatColor.RESET
+						+ " - " + cmd.description());
 			return true;
 		}
-//		sender.sendMessage(left + "/entity report" + right + " - Display top entities for the world you're in");
-//		sender.sendMessage(left + "/entity search " + middle + "<entityType>" + right
-//				+ " - Display players with most entities");
-//		sender.sendMessage(left + "/entity near " + middle + "<radius>" + right + " - Display nearby entities");
-//			sender.sendMessage(left + "/entity remove " + middle + "<radius>" + right + " - Remove nearby entities "
-//					+ Chat.red + "(admin command)");
 
-		for (SubCommand command : commands) {
-			if (command.getName().equals(args[0])) {
-				command.execute(sender, args);
+		for (SubCommand cmd : commands) {
+			if (cmd.getName().equals(args[0])) {
+				cmd.execute(sender, args);
 				break;
 			}
 		}
 		return false;
 	}
 
-	public static List<String> getEntityTypes() {
+	public void logToConsole(String msg) {
+		log.info(pluginTag + " " + ChatColor.RESET + msg);
+	}
+
+	public void fail(CommandSender sender, String why) {
+		sender.sendMessage(ChatColor.RED + "Error: " + ChatColor.RESET + why);
+	}
+
+	public List<String> getEntityTypes() {   
 		ArrayList<String> results = new ArrayList<String>();
 		for (EntityType m : EntityType.values())
 			results.add(m.name());
@@ -83,7 +131,7 @@ public class EntityManager extends JavaPlugin {
 		return results;
 	}
 
-	List<String> myList = new ArrayList<>(Arrays.asList("report", "near", "remove", "search"));
+	private List<String> completeList = new ArrayList<>();
 
 	@Override
 	public List<String> onTabComplete(CommandSender commandSender, Command command, String label, String[] args) {
@@ -91,14 +139,14 @@ public class EntityManager extends JavaPlugin {
 			return Arrays.asList();
 		List<String> results = new ArrayList<>();
 		if (args.length == 1) {
-			for (String a : myList) {
+			for (String a : completeList) {
 				if (a.toLowerCase().startsWith(args[0].toLowerCase()))
 					results.add(a);
 			}
 			return results;
 		}
 		if (args.length == 2) {
-			if (args[0].equalsIgnoreCase("search")) {
+			if (args[0].equalsIgnoreCase("lookup")) {
 				return getResults(args, getEntityTypes());
 			}
 		}

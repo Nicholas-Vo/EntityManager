@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.text.WordUtils;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -21,36 +20,37 @@ import entityManager.EntityManager;
 import entityManager.SubCommand;
 import entityManager.Utils;
 
-public class SearchEntity extends SubCommand {
-	private EntityType toSearch = EntityType.VILLAGER;
+public class LookupEntity extends SubCommand {
 	
-	public SearchEntity(EntityManager entityManager) {
-		super(entityManager, "search");
+	public LookupEntity(EntityManager entityManager) {
+		super(entityManager, "lookup");
 	}
 
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player)) {
-			sender.sendMessage("Player only command.");
+			plugin.fail(sender, "That's a player only command.");
 			return;
 		}
-			
+
 		Player p = (Player) sender;
-		//String worldToString = Utils.worldToString(p.getWorld());
 		List<Player> playersInWorld = p.getWorld().getPlayers();
 
 		if (args.length < 2) {
-			sender.sendMessage("Usage: /entity search <entity>");
+			sender.sendMessage("Usage: /em lookup" + usage());
 			return;
 		}
 
 		if (args.length > 1) {
-			if (EntityType.valueOf(args[1]) == null) {
-				p.sendMessage(ChatColor.RED + "That is not a searchable entity.");
+			String input = args[1].toUpperCase();
+			EntityType toSearch = null;
+
+			try {
+				toSearch = EntityType.valueOf(input);
+			} catch (IllegalArgumentException e) {
+				plugin.fail(sender, "Sorry, you cannot lookup that entity.");
 				return;
 			}
-			
-			toSearch = EntityType.valueOf(args[1]);
 
 			HashMap<Player, Integer> entityList = new HashMap<Player, Integer>();
 			HashMap<Player, Location> locMap = new HashMap<Player, Location>();
@@ -66,20 +66,20 @@ public class SearchEntity extends SubCommand {
 			}
 
 			entityList = sort(entityList);
-			String lookedUp = WordUtils.capitalize(toSearch.toString().toLowerCase().replace("_", " "));
+			String lookedUp = toSearch.toString().toLowerCase().replace("_", " ");
 			if (entityList.size() == 0) {
 				sender.sendMessage("No entities of that type were found.");
 			} else {
-				sender.sendMessage("Players with the most " + lookedUp + "s:");
+				sender.sendMessage("Player(s) with the most " + lookedUp + "s:");
 			}
-			
+
 			int limit = 0;
 			for (Entry<Player, Integer> entry : entityList.entrySet()) {
-				//String entity = WordUtils.capitalize(entry.getKey().toString().toLowerCase().replace("_", " "));
 				int amount = entry.getValue();
 				if (limit < 12) {
-					sender.sendMessage(ChatColor.DARK_GRAY + "- " + ChatColor.GRAY + entry.getKey().getName() + ": " + ChatColor.RED + amount
-							+ " " + ChatColor.WHITE + Utils.locationToString(locMap.get(entry.getKey())));
+					sender.sendMessage(ChatColor.DARK_GRAY + "- " + ChatColor.GRAY + entry.getKey().getName() + ": "
+							+ ChatColor.RED + amount + " " + ChatColor.WHITE
+							+ Utils.locationToString(locMap.get(entry.getKey())));
 				}
 				limit++;
 			}
@@ -97,23 +97,27 @@ public class SearchEntity extends SubCommand {
 		});
 
 		HashMap<Player, Integer> sorted = new LinkedHashMap<Player, Integer>();
-		for (Map.Entry<Player, Integer> entry : list) {
+		for (Map.Entry<Player, Integer> entry : list)
 			sorted.put(entry.getKey(), entry.getValue());
-		}
 		return sorted;
 	}
 
-	private void count(Player p, Map<Player, Integer> entityList) {
-		if (entityList.get(p) == null) {
-			entityList.put(p, 1);
+	private void count(Player p, Map<Player, Integer> list) {
+		if (list.get(p) == null) {
+			list.put(p, 1);
 		} else {
-			entityList.put(p, entityList.get(p) + 1);
+			list.put(p, list.get(p) + 1);
 		}
+	}
+
+	@Override
+	public String description() {
+		return "Lookup top entity count per player for a specific entity";
 	}
 	
 	@Override
-	public String description() {
-		return ChatColor.RED + "search " + ChatColor.RESET + "- Lookup top entity count per player for a specific entity";
+	public String usage() {
+		return "lookup <entity>";
 	}
 
 }

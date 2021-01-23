@@ -16,7 +16,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 public class Utils {
-	public static File dataFolder = EntityManager.plugin.getDataFolder();
 
 	public static String copyableLocation(Player p) {
 		Location l = p.getLocation();
@@ -35,37 +34,23 @@ public class Utils {
 	public static String blockToString(Block block) {
 		return block.getType().toString().toLowerCase().replace("_", " ");
 	}
+	
 	public static String worldToString(World w) {
-		if (w.getName().equals("world"))
+		if (w.getEnvironment().equals(Environment.NORMAL))
 			return "overworld";
-		if (w.getName().equals("world_nether"))
+		if (w.getEnvironment().equals(Environment.NETHER))
 			return "nether";
-		if (w.getName().equals("world_the_end"))
+		if (w.getEnvironment().equals(Environment.THE_END))
 			return "end";
-		else {
+		else
 			return "null";
-		}
 	}
 
 	public static Environment getPlayerWorld(Player p) {
 		return p.getWorld().getEnvironment();
 	}
-	public static String getBlockLocation(Location l) {
-		return l.getBlockX() + ", " + l.getBlockY() + ", " + l.getBlockZ() + ".";
-	}
-	public static Boolean inventoryNotEmpty(Player p) {
-		return p.getInventory().getContents() != null && p.getInventory().getArmorContents() != null;
-	}
 	public static boolean inventoryFull(Player p) {
 		return p.getInventory().firstEmpty() == -1;
-	}
-	public static String getCurrentDate() {
-		SimpleDateFormat niceLookingDate = new SimpleDateFormat("MM/dd/yyyy");
-		return niceLookingDate.format(new Date());
-	}
-	public static String formatDate(Date date) {
-		SimpleDateFormat niceLookingDate = new SimpleDateFormat("MM/dd/yyyy");
-		return niceLookingDate.format(date);
 	}
 	public static void saveFile(YamlConfiguration config, File file) {
 		try {
@@ -74,19 +59,21 @@ public class Utils {
 			e.printStackTrace();
 		}
 	}
+	
 	public static DecimalFormat numberFormat = new DecimalFormat("#,###");
 	static Date date = new Date();
 	static SimpleDateFormat niceLookingDate = new SimpleDateFormat("MM-dd-yyyy");
 	static String format = niceLookingDate.format(date);
+	
 	public static void logToFile(String message, String fileName) {
+		File dataFolder = EntityManager.plugin.getDataFolder();
 		try {
 			if (!dataFolder.exists())
 				dataFolder.mkdir();
 			File saveTo = new File(dataFolder,
 					fileName + ".txt");
-			if (!saveTo.exists()) {
+			if (!saveTo.exists())
 				saveTo.createNewFile();
-			}
 			FileWriter fw = new FileWriter(saveTo, true);
 			PrintWriter pw = new PrintWriter(fw);
 			pw.println("[" + format.toString() + "] " + message);

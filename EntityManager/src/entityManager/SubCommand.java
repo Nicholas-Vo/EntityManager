@@ -16,6 +16,8 @@ public abstract class SubCommand {
 	}
 	
 	public abstract String description();
+	
+	public abstract String usage();
 
 	public abstract void execute(CommandSender sender, String[] args);
 }

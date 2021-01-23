@@ -1,0 +1,20 @@
+# The line below sets a radius limit for the /entity nearby command
+nearbyCommandLimit: 200
+# The line below sets a radius limit for the /entity remove command
+removeCommandLimit: 30
+# Should nearby players be notified when the /entity remove command is used?
+announceRemoval: true
+
+# A list of entities that will not be removed using the /entity remove command
+excludedEntities:
+  - ARMOR_STAND
+  - VILLAGER
+  - ITEM_FRAME
+  - WOLF
+  - BOAT
+  - HORSE
+  - ENDER_CRYSTAL
+  - TRADER_LLAMA
+  - CAT
+  - PAINTING
+  - MINECART

@@ -16,18 +16,22 @@ import org.bukkit.entity.Player;
 import entityManager.EntityManager;
 import entityManager.SubCommand;
 
-public class NearbyEntites extends SubCommand {
-	private int max = 200;
-	private int input = 10;
-
-	public NearbyEntites(EntityManager entityManager) {
-		super(entityManager, "near");
+public class NearbyEntities extends SubCommand {
+	private int limit = 200;
+	private int input = 10; // input defaults to 10
+	
+	public NearbyEntities(EntityManager entityManager) {
+		super(entityManager, "nearby");
 	}
 
 	@Override
 	public void execute(CommandSender sender, String[] args) {
+		if (!(sender instanceof Player)) {
+			sender.sendMessage(ChatColor.RED + "Error: That's a player only command.");
+			return;
+		}
+		
 		Player nick = (Player) sender;
-
 		if (args.length == 2) {
 			if (!NumberUtils.isParsable(args[1])) {
 				sender.sendMessage(args[1] + " isn't applicable - needs to be a number.");
@@ -36,8 +40,8 @@ public class NearbyEntites extends SubCommand {
 			input = Integer.valueOf(args[1]);
 		}
 
-		if (input > max && input > -1) {
-			sender.sendMessage("You can only search for entities within a radius of 200.");
+		if (input > limit && input > 0) {
+			plugin.fail(sender, "You can only search for entities within a radius of " + limit + ".");
 			return;
 		}
 
@@ -79,7 +83,12 @@ public class NearbyEntites extends SubCommand {
 	
 	@Override
 	public String description() {
-		return ChatColor.RED + "nearby " + ChatColor.RESET + "- Display nearby entities";
+		return "Display nearby entities";
+	}
+
+	@Override
+	public String usage() {
+		return "nearby";
 	}
 
 }
